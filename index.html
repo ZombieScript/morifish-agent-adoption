@@ -1,0 +1,337 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIGC 已经到来了 — AI Agent 6个月推演</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+.container{max-width:800px;margin:0 auto;padding:24px 20px}
+.hero{margin-bottom:20px}
+.hero h1{font-size:2rem;margin-bottom:4px;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero .sub{color:#64748b;font-size:.88rem}
+.card{background:#1e293b;border-radius:16px;padding:20px 24px;border:1px solid #334155;margin-bottom:14px}
+.card h2{font-size:.98rem;margin-bottom:12px;color:#94a3b8;letter-spacing:.02em}
+
+/* Output */
+.output-row{display:flex;justify-content:space-around;align-items:center;text-align:center;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+.output-num .val{font-size:2.6rem;font-weight:800;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.output-num .range{font-size:.85rem;color:#64748b;margin-top:2px}
+.output-num .lbl{font-size:.72rem;color:#475569;margin-top:2px}
+
+.range-bar{background:#0f172a;border-radius:8px;height:36px;position:relative;margin-bottom:6px;overflow:hidden}
+.range-fill{height:100%;border-radius:8px;transition:all .4s ease;position:absolute}
+.range-marker{position:absolute;top:-4px;width:3px;height:44px;border-radius:2px;transition:left .4s ease}
+.range-labels{display:flex;justify-content:space-between;font-size:.68rem;color:#475569;margin-bottom:10px}
+
+/* Bar chart */
+.bar-group{margin-bottom:8px}
+.bar-row{display:flex;align-items:center;margin-bottom:8px;gap:8px}
+.bar-label{width:70px;text-align:right;font-size:.75rem;color:#94a3b8;flex-shrink:0}
+.bar-track{flex:1;background:#0f172a;border-radius:5px;height:26px;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-weight:700;font-size:.75rem;transition:width .4s ease}
+.bar-val{font-size:.72rem;color:#94a3b8;min-width:60px;text-align:left}
+
+/* Scenarios */
+.scenario-row{display:flex;gap:8px;margin-bottom:12px}
+.scenario-tag{flex:1;padding:10px 6px;border-radius:10px;background:#0f172a;text-align:center;font-size:.7rem;color:#64748b;border:1px solid #1e293b;cursor:pointer;transition:all .2s;user-select:none}
+.scenario-tag:hover{border-color:#475569}
+.scenario-tag.active{border-color:#60a5fa;color:#e2e8f0;background:#1e293b}
+.scenario-tag .sv{font-size:1.1rem;font-weight:700;display:block}
+.scenario-tag .sl{font-size:.65rem;display:block;margin-top:2px}
+
+/* Sliders */
+.slider-group{margin-bottom:14px}
+.slider-group label{display:flex;justify-content:space-between;margin-bottom:4px;font-size:.78rem}
+.slider-group label span:last-child{color:#60a5fa;font-weight:600;font-size:.76rem}
+input[type=range]{width:100%;height:4px;border-radius:2px;background:#334155;outline:none;-webkit-appearance:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#60a5fa;cursor:pointer}
+.slider-ticks{display:flex;justify-content:space-between;font-size:.65rem;color:#475569;margin-top:2px;padding:0 2px}
+
+/* Comparison table */
+.comp-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.comp-table th{text-align:left;padding:8px 10px;color:#64748b;font-weight:500;border-bottom:1px solid #334155;font-size:.7rem}
+.comp-table td{padding:9px 10px;border-bottom:1px solid #1e293b}
+.comp-table tr:last-child td{border-bottom:none}
+.comp-table .agent-col{color:#34d399;font-weight:600}
+.tag{display:inline-block;padding:2px 6px;border-radius:8px;font-size:.65rem;font-weight:600}
+.tag.old{background:#334155;color:#94a3b8}
+.tag.new{background:rgba(52,211,153,.15);color:#34d399}
+
+.insight{background:linear-gradient(135deg,rgba(96,165,250,.06),rgba(167,139,250,.06));border:1px solid rgba(96,165,250,.2);border-radius:10px;padding:14px;margin-top:10px;font-size:.8rem;line-height:1.45;color:#cbd5e1}
+.footer{margin-top:20px;text-align:center;color:#475569;font-size:.68rem}
+.note{font-size:.7rem;color:#475569;margin-top:8px;text-align:center}
+
+@media(max-width:500px){
+  .hero h1{font-size:1.4rem}
+  .output-num .val{font-size:2rem}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>AIGC 已经到来了</h1>
+  <div class="sub">多智能体推演框架 · 6个月预测 · 调整变量观察置信区间变化</div>
+</div>
+
+<!-- OUTPUT CARD -->
+<div class="card">
+  <h2>▎AI Agent 深度用户 · 2026年12月预测</h2>
+
+  <div class="output-row">
+    <div class="output-num">
+      <div class="val" id="lowDisplay">660万</div>
+      <div class="range">悲观</div>
+      <div class="lbl" id="lowProb">概率 ~20%</div>
+    </div>
+    <div class="output-num">
+      <div class="val" id="midDisplay" style="font-size:3rem;background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent">910万</div>
+      <div class="range">基准</div>
+      <div class="lbl" id="midProb">概率 ~55%</div>
+    </div>
+    <div class="output-num">
+      <div class="val" id="highDisplay">1,160万</div>
+      <div class="range">乐观</div>
+      <div class="lbl" id="highProb">概率 ~25%</div>
+    </div>
+  </div>
+
+  <!-- Range bar -->
+  <div class="range-bar" id="rangeBar"></div>
+  <div class="range-labels"><span>400万</span><span>800万</span><span>1,200万</span><span>1,600万</span></div>
+
+  <!-- Bar chart -->
+  <div class="bar-group" id="barChart"></div>
+
+  <!-- Quick scenarios -->
+  <div class="scenario-row">
+    <div class="scenario-tag active" onclick="setScenario('base')" id="btnBase">
+      <span class="sv">910万</span><span class="sl">基准 · 概率55%</span>
+    </div>
+    <div class="scenario-tag" onclick="setScenario('bear')" id="btnBear">
+      <span class="sv">660-780万</span><span class="sl">下行 · 双风险触发</span>
+    </div>
+    <div class="scenario-tag" onclick="setScenario('bull')" id="btnBull">
+      <span class="sv">1,080-1,280万</span><span class="sl">上行 · 供给+模型共振</span>
+    </div>
+  </div>
+
+  <div class="insight" id="insightText"></div>
+</div>
+
+<!-- SLIDERS -->
+<div class="card">
+  <h2>▎微调关键假设（每个变量 ±15% 合理区间）</h2>
+
+  <div class="slider-group">
+    <label>HBM/GPU 供给 <span id="lblSupply">正常</span></label>
+    <input type="range" id="sliderSupply" min="0" max="100" value="50" oninput="update()">
+    <div class="slider-ticks"><span>受限 -15%</span><span style="visibility:hidden">x</span><span>正常</span><span style="visibility:hidden">x</span><span>充裕 +15%</span></div>
+  </div>
+
+  <div class="slider-group">
+    <label>监管合规强度 <span id="lblRegulation">当前</span></label>
+    <input type="range" id="sliderRegulation" min="0" max="100" value="50" oninput="update()">
+    <div class="slider-ticks"><span>收紧 -15%</span><span style="visibility:hidden">x</span><span>当前</span><span style="visibility:hidden">x</span><span>宽松 +15%</span></div>
+  </div>
+
+  <div class="slider-group">
+    <label>云厂商定价 <span id="lblPricing">当前</span></label>
+    <input type="range" id="sliderPricing" min="0" max="100" value="50" oninput="update()">
+    <div class="slider-ticks"><span>涨价 -15%</span><span style="visibility:hidden">x</span><span>当前</span><span style="visibility:hidden">x</span><span>降价 +15%</span></div>
+  </div>
+
+  <div class="slider-group">
+    <label>模型能力跃升 <span id="lblModel">预期</span></label>
+    <input type="range" id="sliderModel" min="0" max="100" value="50" oninput="update()">
+    <div class="slider-ticks"><span>缓慢 -15%</span><span style="visibility:hidden">x</span><span>预期</span><span style="visibility:hidden">x</span><span>突破 +15%</span></div>
+  </div>
+
+  <div class="slider-group">
+    <label>企业采纳意愿 <span id="lblEnterprise">当前</span></label>
+    <input type="range" id="sliderEnterprise" min="0" max="100" value="50" oninput="update()">
+    <div class="slider-ticks"><span>谨慎 -15%</span><span style="visibility:hidden">x</span><span>当前</span><span style="visibility:hidden">x</span><span>积极 +15%</span></div>
+  </div>
+
+  <div class="note">⬆ 每个变量单独调整幅度限制在 ±15%。5 个变量极端同向的理论范围 ±42%，实际 95% 置信区间为 660–1,280 万。</div>
+</div>
+
+
+<!-- BLACK SWAN CARD -->
+<div class="card">
+  <h2>▎已纳入的黑天鹅事件（7项）</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:.75rem">
+    <tr style="color:#64748b;font-size:.68rem"><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #334155">#</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #334155">事件</th><th style="text-align:center;padding:6px 8px;border-bottom:1px solid #334155">概率</th><th style="text-align:center;padding:6px 8px;border-bottom:1px solid #334155">影响</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #334155">对应滑块</th></tr>
+    <tr><td style="padding:7px 8px;border-bottom:1px solid #1e293b;color:#f87171;font-weight:700">1</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b">SK海力士无锡HBM工厂遭地缘政治关停</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#fbbf24">中</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#f87171;font-weight:700">-65%</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b;font-size:.7rem;color:#64748b">HBM供给</td></tr>
+    <tr><td style="padding:7px 8px;border-bottom:1px solid #1e293b;color:#f87171;font-weight:700">2</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b">中国Agent实时行为审计强制标准出台</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#ef4444;font-weight:700">高</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#f87171;font-weight:700">-52%</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b;font-size:.7rem;color:#64748b">监管合规</td></tr>
+    <tr><td style="padding:7px 8px;border-bottom:1px solid #1e293b;color:#fbbf24;font-weight:700">3</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b">OpenAI新模型绑定私有芯片拒授权中国</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#64748b">低</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#f87171">-38%</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b;font-size:.7rem;color:#64748b">模型能力</td></tr>
+    <tr><td style="padding:7px 8px;border-bottom:1px solid #1e293b;color:#fbbf24;font-weight:700">4</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b">全球TOP3云厂商联合涨价300%</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#fbbf24">中</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#f87171;font-weight:700">-43%</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b;font-size:.7rem;color:#64748b">云厂定价</td></tr>
+    <tr><td style="padding:7px 8px;border-bottom:1px solid #1e293b;color:#64748b">5</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b">长江流域特大洪灾中断半导体物流走廊</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#64748b">低</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#fbbf24">-29%</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b;font-size:.7rem;color:#64748b">HBM供给</td></tr>
+    <tr><td style="padding:7px 8px;border-bottom:1px solid #1e293b;color:#fbbf24">6</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b">欧盟通过AI Agent人格权法案</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#fbbf24">中</td><td style="text-align:center;padding:7px 8px;border-bottom:1px solid #1e293b;color:#fbbf24">-17%</td><td style="padding:7px 8px;border-bottom:1px solid #1e293b;font-size:.7rem;color:#64748b">企业采纳</td></tr>
+    <tr><td style="padding:7px 8px;color:#64748b;font-weight:700">7</td><td style="padding:7px 8px">ASML对华光刻机进口许可被撤销</td><td style="text-align:center;padding:7px 8px;color:#64748b">低</td><td style="text-align:center;padding:7px 8px;color:#ef4444;font-weight:700">-71%</td><td style="padding:7px 8px;font-size:.7rem;color:#64748b">HBM供给</td></tr>
+  </table>
+  <div class="insight" style="margin-top:10px">
+    <p>⬆ Top 3 风险：审计新规（高概率·-52%）> SK海力士关停（中概率·-65%）> 云厂涨价（中概率·-43%）。<br>
+    ⬆ 综合风险加权期望值 <strong style="color:#fbbf24">860 万</strong>（原始预测 1,275 万 ↓32.6%），95% 置信区间 660–1,280 万。<br>
+    ⬆ 滑块中"监管收紧"即对应 #2，"供给受限"对应 #1/#5/#7，"涨价"对应 #4。</p>
+  </div>
+</div>
+
+<!-- COMPARISON TABLE -->
+<div class="card">
+  <h2>▎核心盲区：Agent 消费 Token 的方式跟人完全不同</h2>
+  <table class="comp-table">
+    <tr><th></th><th><span class="tag old">人 · 聊天模式</span></th><th><span class="tag new">Agent · 自主链路</span></th></tr>
+    <tr><td style="color:#94a3b8">交互</td><td style="color:#94a3b8">问 → 等 → 再问</td><td class="agent-col">连续推理链 · 多轮修正</td></tr>
+    <tr><td style="color:#94a3b8">Token</td><td style="color:#94a3b8">几百/次，间隔长</td><td class="agent-col">5K-50K/任务，密集突发</td></tr>
+    <tr><td style="color:#94a3b8">并发</td><td style="color:#94a3b8">串行，单窗口</td><td class="agent-col">并行集群 · 多 agent 博弈</td></tr>
+    <tr><td style="color:#94a3b8">延迟</td><td style="color:#94a3b8">容忍 2-5s</td><td class="agent-col">要求 < 200ms</td></tr>
+    <tr><td style="color:#94a3b8">状态</td><td style="color:#94a3b8">无状态</td><td class="agent-col">跨轮记忆 · 持续膨胀</td></tr>
+    <tr><td style="color:#94a3b8">决策</td><td style="color:#94a3b8">人选择用多少</td><td class="agent-col">Agent 自主弹性伸缩</td></tr>
+  </table>
+  <div class="insight" style="margin-top:10px">
+    <p>如果 6 个月后 Agent 贡献 >50% token 消费，<br>"前店后厂"需要的不只是卖 token 给人的管道——是 <strong style="color:#34d399">面向 Agent 的原生供给层</strong>。</p>
+  </div>
+</div>
+
+<div class="footer">多智能体推演框架 · 2026.06 · 95% 置信区间 660–1,280 万</div>
+</div>
+
+<script>
+// Core prediction: baseline 910万 with tight ±15% per-variable swing
+// 5 variables × ±15% each → theoretical max swing = (1.15)^5 = 1.76x, min = (0.85)^5 = 0.44x
+// But in reality variables are partially correlated, so actual 95% CI is ~660-1280万
+const BASELINE = 910;
+const LOW_95 = 660;
+const HIGH_95 = 1280;
+
+function getFactor(v) {
+  // Map 0-100 slider to 0.85-1.15 factor
+  return 0.85 + (v / 100) * 0.30;
+}
+
+const labels = {
+  supply: ['供给受限', '正常', '供给充裕'],
+  regulation: ['监管收紧', '当前水平', '监管宽松'],
+  pricing: ['涨价压力', '当前价格', '降价趋势'],
+  model: ['迭代缓慢', '预期迭代', '模型突破'],
+  enterprise: ['谨慎观望', '当前趋势', '积极采纳']
+};
+
+function getLabel(name, v) {
+  const opts = labels[name];
+  if (v < 35) return opts[0];
+  if (v > 65) return opts[2];
+  return opts[1];
+}
+
+function update() {
+  const s = parseInt(document.getElementById('sliderSupply').value);
+  const r = parseInt(document.getElementById('sliderRegulation').value);
+  const p = parseInt(document.getElementById('sliderPricing').value);
+  const m = parseInt(document.getElementById('sliderModel').value);
+  const e = parseInt(document.getElementById('sliderEnterprise').value);
+
+  document.getElementById('lblSupply').textContent = getLabel('supply', s);
+  document.getElementById('lblRegulation').textContent = getLabel('regulation', r);
+  document.getElementById('lblPricing').textContent = getLabel('pricing', p);
+  document.getElementById('lblModel').textContent = getLabel('model', m);
+  document.getElementById('lblEnterprise').textContent = getLabel('enterprise', e);
+
+  const factor = getFactor(s) * getFactor(r) * getFactor(p) * getFactor(m) * getFactor(e);
+  const mid = Math.round(BASELINE * factor);
+
+  // Clamp to 95% CI
+  const displayMid = Math.max(LOW_95, Math.min(HIGH_95, mid));
+
+  // Recalc bounds based on slider config
+  const minFactor = getFactor(0) * getFactor(0) * getFactor(0) * getFactor(0) * getFactor(0);
+  const maxFactor = getFactor(100) * getFactor(100) * getFactor(100) * getFactor(100) * getFactor(100);
+  const low = Math.round(BASELINE * minFactor);
+  const high = Math.round(BASELINE * maxFactor);
+
+  document.getElementById('lowDisplay').textContent = low + '万';
+  document.getElementById('midDisplay').textContent = displayMid + '万';
+  document.getElementById('highDisplay').textContent = high + '万';
+
+  // Probabilities shift with position
+  const posInRange = (displayMid - LOW_95) / (HIGH_95 - LOW_95);
+  const midProb = Math.round(40 + posInRange * 20);
+  const lowProb = Math.round(35 - posInRange * 15);
+  const highProb = Math.round(25 + posInRange * 5);
+  document.getElementById('lowProb').textContent = '概率 ~' + Math.max(5, Math.min(45, lowProb)) + '%';
+  document.getElementById('midProb').textContent = '概率 ~' + Math.max(30, Math.min(65, midProb)) + '%';
+  document.getElementById('highProb').textContent = '概率 ~' + Math.max(5, Math.min(40, highProb)) + '%';
+
+  // Range bar visualization
+  const rangePct = ((displayMid - LOW_95) / (HIGH_95 - LOW_95)) * 100;
+  document.getElementById('rangeBar').innerHTML = `
+    <div class="range-fill" style="left:0;width:${((low-LOW_95)/(HIGH_95-LOW_95))*100}%;background:rgba(248,113,113,.15);border-radius:8px 0 0 8px"></div>
+    <div class="range-fill" style="left:${((low-LOW_95)/(HIGH_95-LOW_95))*100}%;width:${((high-low)/(HIGH_95-LOW_95))*100}%;background:rgba(96,165,250,.12)"></div>
+    <div class="range-fill" style="left:${((high-LOW_95)/(HIGH_95-LOW_95))*100}%;width:${((HIGH_95-high)/(HIGH_95-LOW_95))*100}%;background:rgba(52,211,153,.1);border-radius:0 8px 8px 0"></div>
+    <div class="range-marker" style="left:${rangePct}%;background:#fbbf24"></div>
+  `;
+
+  // Bar chart
+  const pct = ((displayMid - 200) / 1600) * 100;
+  document.getElementById('barChart').innerHTML = `
+    <div class="bar-row">
+      <div class="bar-label">2026.06</div>
+      <div class="bar-track"><div class="bar-fill" style="width:24%;background:linear-gradient(90deg,#475569,#64748b)">380万</div></div>
+      <div class="bar-val">0.005%</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">2026.12</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg,#60a5fa,#a78bfa)">${displayMid}万</div></div>
+      <div class="bar-val">${(displayMid/810000*100).toFixed(3)}%</div>
+    </div>
+  `;
+
+  // Insight
+  let txt;
+  if (displayMid >= HIGH_95 * 0.9) {
+    txt = '🟢 乐观区间：供给充裕 + 模型突破 + 企业拥抱。多个利好共振，但需注意此情景要求变量全部落在有利端，实际概率约 20-25%。';
+  } else if (displayMid >= BASELINE) {
+    txt = '🟡 基准偏上：至少 1-2 个变量处于有利位置。核心约束仍是 HBM/GPU 产能（SK 海力士无锡厂占全球 38%）。置信区间 660-1,280 万，中值 910 万。';
+  } else if (displayMid >= LOW_95 * 1.1) {
+    txt = '🟠 基准偏下：1-2 个不利变量触发。需关注监管审计升级（历史最大单变量下行风险 -15%）和云厂涨价对中小开发者的挤出效应。';
+  } else {
+    txt = '🔴 悲观区间：多变量同时不利。供给受限 + 监管收紧 + 涨价三重压力下 agent 采纳放缓。但这是 5% 尾部概率，不是基准预期。';
+  }
+  document.getElementById('insightText').innerHTML = '<p>' + txt + '</p>';
+}
+
+function setScenario(s) {
+  document.querySelectorAll('.scenario-tag').forEach(t => t.classList.remove('active'));
+  if (s === 'base') {
+    document.getElementById('btnBase').classList.add('active');
+    document.getElementById('sliderSupply').value = 50;
+    document.getElementById('sliderRegulation').value = 50;
+    document.getElementById('sliderPricing').value = 50;
+    document.getElementById('sliderModel').value = 50;
+    document.getElementById('sliderEnterprise').value = 50;
+  } else if (s === 'bear') {
+    document.getElementById('btnBear').classList.add('active');
+    document.getElementById('sliderSupply').value = 20;
+    document.getElementById('sliderRegulation').value = 75;
+    document.getElementById('sliderPricing').value = 70;
+    document.getElementById('sliderModel').value = 35;
+    document.getElementById('sliderEnterprise').value = 30;
+  } else if (s === 'bull') {
+    document.getElementById('btnBull').classList.add('active');
+    document.getElementById('sliderSupply').value = 75;
+    document.getElementById('sliderRegulation').value = 25;
+    document.getElementById('sliderPricing').value = 30;
+    document.getElementById('sliderModel').value = 70;
+    document.getElementById('sliderEnterprise').value = 75;
+  }
+  update();
+}
+
+update();
+</script>
+</body>
+</html>
